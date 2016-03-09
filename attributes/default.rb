@@ -10,7 +10,7 @@ default[:projects][:foreman] = {
 
 default[:projects][:hammer] = {
   :plugins => Hash[[
-                     projects_attributes('hammer-cli-foreman', :module_name => 'hammer_cli_foreman')
+                     project_attributes('hammer-cli-foreman', :module_name => 'hammer_cli_foreman')
                    ]]
 }
 
