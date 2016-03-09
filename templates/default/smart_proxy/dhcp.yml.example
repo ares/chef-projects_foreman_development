@@ -1,0 +1,12 @@
+---
+# Can be true, false, or http/https to enable just one of the protocols
+:enabled: true
+
+# valid providers:
+#   - dhcp_isc (ISC dhcp server)
+#   - dhcp_native_ms (Microsoft native implementation)
+#   - dhcp_virsh (simple implementation for libvirt)
+:use_provider: dhcp_virsh
+#:server: 127.0.0.1
+# subnets restricts the subnets queried to a subset, to reduce the query time.
+#:subnets: [192.168.205.0/255.255.255.128, 192.168.205.128/255.255.255.128]

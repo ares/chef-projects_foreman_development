@@ -1,0 +1,43 @@
+---
+# You must restart the Rack server after changing either of these values
+# because they are cached at startup.
+#
+:unattended: true
+:login: true
+:require_ssl: true
+
+:locations_enabled: true
+:organizations_enabled: true
+#JSONP or "JSON with padding" is a complement to the base JSON data format.
+#It provides a method to request JSON data from a server in a different domain.
+:support_jsonp: false
+#:puppetconfdir: /etc/puppet
+#:puppetvardir: /var/lib/puppet
+#:puppetssldir: /var/lib/puppet/ssl
+:puppetgem: true
+
+# Mark translated strings with X characters (for developers)
+:mark_translated: false
+
+:fqdn: <%= node[:fqdn] %>
+
+# required so that migrations can create values
+:websockets_ssl_key: nil
+:websockets_ssl_cert: nil
+:websockets_encrypt: false
+
+# Log settings for the current environment can be adjusted by adding them
+# here. For example, if you want to increase the log level.
+#:logging:
+#  :level: debug
+
+# Individual logging types can be toggled on/off here
+:loggers:
+  :app:
+    :enabled: true
+  :ldap:
+    :enabled: true
+  :sql:
+    :enabled: true
+  :permissions:
+    :enabled: true

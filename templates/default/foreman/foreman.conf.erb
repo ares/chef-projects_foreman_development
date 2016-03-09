@@ -1,0 +1,67 @@
+#
+# HTTP foreman server configuration
+# required for provisioning (kickstart/preseed download)
+#
+server {
+    listen       80;
+    server_name  foreman.example.tst;
+    client_max_body_size 500M;
+
+    access_log  <%= @access_log -%>.log;
+    error_log  <%= @error_log -%>.log;
+
+    location / {
+        proxy_pass        http://localhost:3000/;
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header  Host $host;
+        proxy_read_timeout 1000s;
+    }
+
+}
+
+#
+# HTTPS foreman server configuration
+#
+server {
+    listen       443;
+    server_name  foreman.example.tst;
+    server_name  localhost;
+
+    ssl                  on;
+    ssl_certificate      <%= @certificate_path -%>;
+    ssl_certificate_key  <%= @private_key_path -%>;
+
+    ssl_verify_client       optional;
+    ssl_client_certificate  <%= @certificate_path -%>;
+    ssl_trusted_certificate <%= @ca_path -%>;
+
+    ssl_session_timeout  5m;
+
+    ssl_protocols  SSLv2 SSLv3 TLSv1;
+    ssl_ciphers  HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers   on;
+
+    client_max_body_size 500M;
+
+    access_log  <%= @access_log -%>-ssl.log;
+    error_log  <%= @error_log -%>-ssl.log;
+
+    location / {
+        proxy_pass        http://localhost:3000;
+        proxy_set_header  X-Real-IP  $remote_addr;
+        proxy_set_header  Host $host;
+        proxy_set_header  X-Forwarded-Proto $scheme;
+        proxy_set_header  X-Forwarded_SSL on;
+        # we need to pass client cert DN info
+        proxy_set_header  SSL_CLIENT_S_DN $ssl_client_s_dn;
+        proxy_set_header  SSL_CLIENT_VERIFY $ssl_client_verify;
+        proxy_read_timeout 1000s;
+    }
+
+# does not work, REMOTE_USER is translated to HTTP_REMOTE_USER and X-Forwarded-User is ignored
+#        proxy_set_header  X-Forwarded-User admin;
+#        proxy_set_header  REMOTE_USER admin;
+#        proxy_set_header  REMOTE_USER_GROUP_N 2;
+#        proxy_set_header  REMOTE_USER_GROUP_1 a;
+#        proxy_set_header  REMOTE_USER_GROUP_2 b;
+}

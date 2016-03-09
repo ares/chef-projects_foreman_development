@@ -1,0 +1,123 @@
+<% hammer = 'bundle exec bin/hammer' -%>
+FOREMAN_DOMAIN=<%= 'foreman.example.tst' %>
+PROXY_NAME=<%= 'foreman.example.tst' %>
+PROXY_URL=<%= 'https://${PROXY_NAME}:8443' %>
+PROVISIONING_DOMAIN=<%= 'example.tst' %>
+ORG_NAME=<%= 'Ares' %>
+LOC_NAME=<%= 'Brno' %>
+NETWORK=<%= '192.168.122.0' %>
+MASK=<%= '255.255.255.0' %>
+GATEWAY=<%= '192.168.122.1' %>
+DNS_PRIMARY=<%= '192.168.122.1' %>
+DHCP_FROM=<%= '192.168.122.20' %>
+DHCP_TO=<%= '192.168.122.254' %>
+
+# Fix admin user email
+<%= hammer -%> user update --id admin --mail mhulan@redhat.com
+
+# Fix settigns
+<%= hammer -%> settings set --id administrator --value '<%= node[:git][:email] -%>'
+<%= hammer -%> settings set --id email_reply_address --value 'Foreman <<%= node[:git][:email] %>>'
+<%= hammer -%> settings set --id foreman_url --value "https://${FOREMAN_DOMAIN}"
+<%= hammer -%> settings set --id idle_timeout --value 600
+  # client SSL certificate
+<%= hammer -%> settings set --id ssl_certificate --value /var/lib/puppet/ssl/certs/${FOREMAN_DOMAIN}.pem
+<%= hammer -%> settings set --id ssl_priv_key --value /var/lib/puppet/ssl/private_keys/${FOREMAN_DOMAIN}.pem
+<%= hammer -%> settings set --id unattended_url --value http://${FOREMAN_DOMAIN}
+ # setup customer header name used by nginx for client certificate authentication
+<%= hammer -%> settings set --id ssl_client_dn_env --value 'HTTP_SSL_CLIENT_S_DN'
+<%= hammer -%> settings set --id ssl_client_verify_env --value 'HTTP_SSL_CLIENT_VERIFY'
+
+
+# Setup taxonomies
+<%= hammer -%> organization create --name "${ORG_NAME}"
+<%= hammer -%> settings set --id default_location --value "${LOC_NAME}"
+<%= hammer -%> location create --name "${LOC_NAME}"
+<%= hammer -%> settings set --id default_organization --value "${ORG_NAME}"
+
+# Create installed local proxy
+<%= hammer -%> proxy create --name "${PROXY_NAME}" --url "${PROXY_URL}" --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+
+# Compute resource
+<%= hammer -%> compute-resource create --name 'Local libvirt' --url 'qemu:///system' --provider libvirt --set-console-password false --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+
+# Networking
+<%= hammer -%> domain create --name '${PROVISIONING_DOMAIN}' --dns "${PROXY_NAME}" --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+
+proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "Id:" | awk '{print $2}'`
+<%= hammer -%> subnet create --name 'default' --network "${NETWORK}" --mask "${MASK}"\
+  --gateway "${GATEWAY}" --dns-primary "${DNS_PRIMARY}" --ipam 'DHCP' --from "${DHCP_FROM}" --to "${DHCP_TO}"\
+  --boot-mode 'DHCP' --domains "${PROVISIONING_DOMAIN}" --dns-id $proxy_id --tftp-id $proxy_id --dhcp-id $proxy_id\
+  --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+
+### static networking - mainly for testing internal DB IPAM, aliases etc
+<%= hammer -%> subnet create --name 'static' --network "192.168.10.0" --mask "255.255.255.0"\
+  --gateway "192.168.10.1" --dns-primary "192.168.10.1" --ipam 'Internal DB' --from "192.168.10.10" --to "192.168.10.100"\
+  --boot-mode 'Static' --domains "${PROVISIONING_DOMAIN}" --dns-id $proxy_id --tftp-id $proxy_id --dhcp-id $proxy_id\
+  --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+
+
+# TODO compute profiles - 15 GB - seems hammer command is missing
+
+# Installation media association
+<%= hammer -%> medium update --name 'CentOS mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium update --name 'Debian mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+
+<%= hammer -%> medium create --name 'Debian local proxy' --path "http://${FOREMAN_DOMAIN}:3142/ftp.cz.debian.org/debian/" --family Debian --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium create --name 'RedHat BRQ mirror' --path 'http://download.englab.brq.redhat.com/pub/rhel/released/RHEL-$major/$major.$minor/Server/$arch/os/' --family Redhat --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+
+# Operating systems
+### CentOS
+<% centos_versions = [ { :major => 6, :minor => 7 } ] %>
+<% centos_versions.each do |os_attrs| -%>
+  <% os_name = 'CentOS' -%>
+  <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
+
+  <%= hammer -%> os create --architectures 'x86_64' --family 'Redhat' --major <%= os_attrs[:major] -%> --minor <%= os_attrs[:minor] -%> --name <%= os_name -%> --partition-tables 'Kickstart default' --media 'CentOS mirror' --release-name '<%= os_attrs[:release] -%>'
+  os_id=`<%= hammer -%> --output yaml os info --title '<%= os -%>' | grep "Id:" | awk '{print $2}'`
+  <% ['Kickstart default', 'Kickstart default PXELinux', 'Kickstart default finish'].each do |template_name| %>
+    <%= hammer -%> template add-operatingsystem --name '<%= template_name -%>' --operatingsystem '<%= os -%>'
+    template_id=`<%= hammer -%> --output yaml template info --name '<%= template_name -%>' | grep "Id:" | awk '{print $2}'`
+    <%= hammer -%> os set-default-template --id $os_id --config-template-id $template_id
+  <% end %>
+<% end -%>
+
+### RHEL - same as CentOS
+<% rhel_versions = [ { :major => 7, :minor => 2 } ] %>
+<% rhel_versions.each do |os_attrs| -%>
+  <% os_name = 'RedHat' -%>
+  <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
+
+  <%= hammer -%> os create --architectures 'x86_64' --family 'Redhat' --major <%= os_attrs[:major] -%> --minor <%= os_attrs[:minor] -%> --name <%= os_name -%> --partition-tables 'Kickstart default' --media 'RedHat BRQ mirror' --release-name '<%= os_attrs[:release] -%>'
+  os_id=`<%= hammer -%> --output yaml os info --title '<%= os -%>' | grep "Id:" | awk '{print $2}'`
+  <% ['Kickstart default', 'Kickstart default PXELinux', 'Kickstart default finish'].each do |template_name| %>
+    <%= hammer -%> template add-operatingsystem --name '<%= template_name -%>' --operatingsystem '<%= os -%>'
+    template_id=`<%= hammer -%> --output yaml template info --name '<%= template_name -%>' | grep "Id:" | awk '{print $2}'`
+    <%= hammer -%> os set-default-template --id $os_id --config-template-id $template_id
+  <% end %>
+<% end -%>
+
+
+### Debian
+<% debian_versions = [ { :major => 7, :minor => 9, :release => 'wheezy' }, { :major => 8, :minor => 3, :release => 'jessie' } ] -%>
+<% debian_versions.each do |os_attrs| -%>
+  <% os_name = 'Debian' -%>
+  <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
+
+  <%= hammer -%> os create --architectures 'x86_64' --family 'Debian' --major <%= os_attrs[:major] -%> --minor <%= os_attrs[:minor] -%> --name <%= os_name -%> --partition-tables 'Preseed default' --media 'Debian mirror,Debian local proxy' --release-name '<%= os_attrs[:release] -%>'
+  os_id=`<%= hammer -%> --output yaml os info --title '<%= os -%>' | grep "Id:" | awk '{print $2}'`
+  <% ['Preseed default', 'Preseed default PXELinux', 'Preseed default finish'].each do |template_name| %>
+    <%= hammer -%> template add-operatingsystem --name '<%= template_name -%>' --operatingsystem '<%= os -%>'
+    template_id=`<%= hammer -%> --output yaml template info --name '<%= template_name -%>' | grep "Id:" | awk '{print $2}'`
+    <%= hammer -%> os set-default-template --id $os_id --config-template-id $template_id
+  <% end %>
+<% end %>
+
+# Chef settings
+<%= hammer -%> global-parameter set --name chef_server_url --value 'https://chef.hulan.it'
+<%= hammer -%> global-parameter set --name chef_validation_private_key --value "`cat /etc/chef/pivotal_simpsons.pem`"
+<%= hammer -%> global-parameter set --name chef_validator_name --value pivotal
+<%= hammer -%> global-parameter set --name chef_handler_foreman_url --value '${PROXY_URL}'
+
+# Puppet settings
+<%= hammer -%> environment create --name production --locations "${LOC_NAME}" --organizations "${ORG_NAME}"

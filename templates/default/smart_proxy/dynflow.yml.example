@@ -1,0 +1,4 @@
+---
+:enabled: true
+:database: <%= @smart_proxy_plugin.main_project_path %>/dynflow.sqlite
+:console_auth: true

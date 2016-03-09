@@ -1,0 +1,16 @@
+:modules:
+<% node[:projects][:hammer][:plugins].each do |_, plugin| -%>
+  - <%= plugin[:module_name] %>
+<% end -%>
+
+foreman:
+  :host: 'https://foreman.example.tst'
+  :username: 'admin'
+  :password: '<%= node[:projects][:foreman][:password] -%>'
+
+# :watch_plain: true disables color output of logger.watch in Clamp commands
+:watch_plain: false
+
+#:log_dir: '/var/log/foreman'
+:log_dir: '<%= project_path('foreman') %>/log/hammer.log'
+:log_level: 'error'
