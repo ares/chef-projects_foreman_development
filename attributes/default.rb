@@ -1,6 +1,7 @@
 default[:projects][:foreman] = {
   :password => 'changeme',
   :setup_libvirt => true,
+  :setup_apt_cacher_ng => !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6,
   :plugins => Hash[[
                      project_attributes('foreman_remote_execution'),
                      project_attributes('foreman-tasks'),

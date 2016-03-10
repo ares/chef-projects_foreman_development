@@ -9,6 +9,14 @@ I do not recommend using it in production environment because
   * uses password stored as node attribute in cleartext
   * relies on projects cookbook which disables selinux
 
+Local libvirt setup with provisioning won't work on RHEL 6 or CentOS 6 because they lack
+some software we need (NM, polkit, firewalld). You can still use it for installing Foreman
+with plugins on these platforms though.
+
+There's similar limitation for SSL client authentication of smart proxy because of too old
+nginx that does not support ssl_trusted_certificate. You might need to setup trusted hosts
+if you need to allow this communication.
+
 TODO in future: 
   * customizable project owner and branch so you could simply use it to prepare setup with branches of other contributors
   * make certificate customizable through attributes

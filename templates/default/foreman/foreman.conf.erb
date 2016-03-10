@@ -33,7 +33,9 @@ server {
 
     ssl_verify_client       optional;
     ssl_client_certificate  <%= @certificate_path -%>;
+<% if !node.platform?('centos', 'rhel') || node[:platform_version].to_i > 6 %>
     ssl_trusted_certificate <%= @ca_path -%>;
+<% end %>
 
     ssl_session_timeout  5m;
 

@@ -141,12 +141,14 @@ if node[:projects][:foreman][:setup_libvirt]
     end
   end
 
-  template '/etc/polkit-1/rules.d/60-libvirt.rules' do
-    owner node[:user]
-    group node[:user]
-    mode '0644'
-    source 'foreman/libvirt.rules.erb'
-    variables :user => node[:user]
+  if !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6
+    template '/etc/polkit-1/rules.d/60-libvirt.rules' do
+      owner node[:user]
+      group node[:user]
+      mode '0644'
+      source 'foreman/libvirt.rules.erb'
+      variables :user => node[:user]
+    end
   end
 
   %w(chain.c32 menu.c32 memdisk pxelinux.0 ldlinux.c32 libutil.c32).each do |file|
@@ -200,12 +202,14 @@ end
 
 # end of nginx
 
-# apt-proxy-ng
-package 'apt-cacher-ng'
-service 'apt-cacher-ng' do
-  action  [ :enable, :start ]
+if node[:projects][:foreman][:setup_apt_cacher_ng]
+  # apt-proxy-ng
+  package 'apt-cacher-ng'
+  service 'apt-cacher-ng' do
+    action  [ :enable, :start ]
+  end
+  # end of apt-proxy-ng
 end
-# end of apt-proxy-ng
 
 # seed script start
 template "#{install_path}/tmp/seed_script.sh" do
