@@ -30,6 +30,7 @@ template "#{project_path('hammer-cli')}/Gemfile.local" do
   group node[:user]
   mode '0644'
   source 'gemfile.erb'
+  cookbook 'projects'
   variables :gems => node[:projects][:hammer][:plugins]
 end
 
