@@ -107,17 +107,20 @@ if node[:projects][:foreman][:setup_libvirt]
     action [:define, :autostart]
   end
 
-  # Network manager must be set to use local dnsmasq so we have good control of example.tst domain
-  template '/etc/NetworkManager/NetworkManager.conf' do
-    source 'foreman/NetworkManager.conf.erb'
-    mode '0644'
-    notifies :restart, 'service[libvirtd]'
-  end
-
-  template '/etc/NetworkManager/dnsmasq.d/foreman_libvirt.conf' do
-    source 'foreman/foreman_libvirt.conf'
-    mode '0644'
-    notifies :restart, 'service[libvirtd]'
+  # on EL6 we can't rely on NetworkManager so we skip this
+  if !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6
+    # Network manager must be set to use local dnsmasq so we have good control of example.tst domain
+    template '/etc/NetworkManager/NetworkManager.conf' do
+      source 'foreman/NetworkManager.conf.erb'
+      mode '0644'
+      notifies :restart, 'service[libvirtd]'
+    end
+  
+    template '/etc/NetworkManager/dnsmasq.d/foreman_libvirt.conf' do
+      source 'foreman/foreman_libvirt.conf'
+      mode '0644'
+      notifies :restart, 'service[libvirtd]'
+    end
   end
 
   # for deb different packages are required - https://github.com/theforeman/puppet-tftp/blob/master/manifests/params.pp
