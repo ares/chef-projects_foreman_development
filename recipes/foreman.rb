@@ -58,7 +58,7 @@ end
 # TODO mysql and make the whole recipe configurable so it can be reused on devel_host
 ## DB end
 
-file "#{install_path}/bundler.d/Gemfile.chef.local.rb" do
+template "#{install_path}/bundler.d/Gemfile.chef.local.rb" do
   source 'foreman/Gemfile.chef.local.rb.erb'
   mode '0644'
   owner node[:user]
