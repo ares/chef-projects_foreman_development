@@ -52,7 +52,11 @@ case node[:platform]
     package 'libmysqlclient-dev'
   when 'redhat', 'centos', 'fedora'
     package 'sqlite-devel'
-    package 'mariadb-devel'
+    if node.platform?('rhel', 'centos') && node[:platform_version].to_i > 6
+      package 'mariadb-devel'
+    else
+      package 'mysql-devel'
+    end
 end
 
 # TODO mysql and make the whole recipe configurable so it can be reused on devel_host
