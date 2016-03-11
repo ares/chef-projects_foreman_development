@@ -161,6 +161,7 @@ if node[:projects][:foreman][:setup_libvirt]
 end
 
 # nginx proxy
+ca_cert('ares_ca.pem')
 include_recipe 'nginx'
 
 certificate_path = "#{node['nginx']['dir']}/foreman.example.tst.pem"
