@@ -226,4 +226,4 @@ template "#{install_path}/tmp/seed_script.sh" do
 end
 # seed script end
 
-include_recipe 'foreman_testing'
+include_recipe 'projects_foreman_development::foreman_testing'
