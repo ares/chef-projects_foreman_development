@@ -52,7 +52,7 @@ case node[:platform]
     package 'libmysqlclient-dev'
   when 'redhat', 'centos', 'fedora'
     package 'sqlite-devel'
-    if node.platform?('rhel', 'centos') && node[:platform_version].to_i > 6
+    if !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6
       package 'mariadb-devel'
     else
       package 'mysql-devel'
@@ -89,6 +89,11 @@ end
 rake_db_seed install_path do
   user node[:user]
   env({ :SEED_ADMIN_PASSWORD => node[:projects][:foreman][:password] })
+end
+
+rake_apipie_cache install_path do
+  user node[:user]
+  env({ :FOREMAN_APIPIE_LANGS => 'en' })
 end
 
 if node[:projects][:foreman][:setup_libvirt]
@@ -221,6 +226,4 @@ template "#{install_path}/tmp/seed_script.sh" do
 end
 # seed script end
 
-# TODO setup zeus
-# https://github.com/iNecas/katello.org/blob/fe105daf59b80eadc468b82175a81ff152818d06/developers/testing.md
-# and foreman proxy settings from edna
+include_recipe 'foreman_testing'

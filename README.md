@@ -55,4 +55,16 @@ Just include `projects_foreman_development` in your node's `run_list`:
 }
 ```
 
+For additional plugins you can add their recipes like this
+
+```json
+{
+  "name":"my_node",
+  "run_list": [
+    "recipe[projects_foreman_development]"
+    "recipe[projects_foreman_development::plugin_discovery]"
+  ]
+}
+```
+
 See default attributes for customization options

@@ -42,7 +42,7 @@ DHCP_TO=<%= '192.168.122.254' %>
 <%= hammer -%> compute-resource create --name 'Local libvirt' --url 'qemu:///system' --provider libvirt --set-console-password false --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 
 # Networking
-<%= hammer -%> domain create --name '${PROVISIONING_DOMAIN}' --dns "${PROXY_NAME}" --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+<%= hammer -%> domain create --name "${PROVISIONING_DOMAIN}" --dns "${PROXY_NAME}" --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
 
 proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "Id:" | awk '{print $2}'`
 <%= hammer -%> subnet create --name 'default' --network "${NETWORK}" --mask "${MASK}"\
@@ -63,12 +63,11 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 <%= hammer -%> medium update --name 'CentOS mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 <%= hammer -%> medium update --name 'Debian mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 
-<%= hammer -%> medium create --name 'Debian local proxy' --path "http://${FOREMAN_DOMAIN}:3142/ftp.cz.debian.org/debian/" --family Debian --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
-<%= hammer -%> medium create --name 'RedHat BRQ mirror' --path 'http://download.englab.brq.redhat.com/pub/rhel/released/RHEL-$major/$major.$minor/Server/$arch/os/' --family Redhat --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
-
+<%= hammer -%> medium create --name 'Debian local proxy' --path "http://${FOREMAN_DOMAIN}:3142/ftp.cz.debian.org/debian/" --os-family Debian --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium create --name 'RedHat BRQ mirror' --path 'http://download.englab.brq.redhat.com/pub/rhel/released/RHEL-$major/$major.$minor/Server/$arch/os/' --os-family Redhat --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 # Operating systems
 ### CentOS
-<% centos_versions = [ { :major => 6, :minor => 7 } ] %>
+<% centos_versions = [ { :major => 6, :minor => 7 }, { :major => 7, :minor => '2.1511' } ] %>
 <% centos_versions.each do |os_attrs| -%>
   <% os_name = 'CentOS' -%>
   <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
@@ -117,7 +116,13 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 <%= hammer -%> global-parameter set --name chef_server_url --value 'https://chef.hulan.it'
 <%= hammer -%> global-parameter set --name chef_validation_private_key --value "`cat /etc/chef/pivotal_simpsons.pem`"
 <%= hammer -%> global-parameter set --name chef_validator_name --value pivotal
-<%= hammer -%> global-parameter set --name chef_handler_foreman_url --value '${PROXY_URL}'
+<%= hammer -%> global-parameter set --name chef_handler_foreman_url --value "${PROXY_URL}"
 
 # Puppet settings
 <%= hammer -%> environment create --name production --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+
+# TODO improve to include plugins.d/* (foreman_discovery.sh)
+<% if node[:projects][:foreman][:plugins].has_key?(:foreman_discovery) %>
+  <%= hammer %> template update --id 'PXELinux global default' --file <%= project_path('foreman/tmp/pxe_linux_global_default.erb') -%>
+  <%= hammer %> template build-pxe-default
+<% end %>
