@@ -123,6 +123,6 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 
 # TODO improve to include plugins.d/* (foreman_discovery.sh)
 <% if node[:projects][:foreman][:plugins].has_key?(:foreman_discovery) %>
-  <%= hammer %> template update --id 'PXELinux global default' --file <%= project_path('foreman/tmp/pxe_linux_global_default.erb') -%>
+  <%= hammer %> template update --id 'PXELinux global default' --file <%= project_path('foreman/tmp/pxe_linux_global_default.erb') %>
   <%= hammer %> template build-pxe-default
 <% end %>
