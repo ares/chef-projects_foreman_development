@@ -2,6 +2,7 @@ default[:projects][:foreman] = {
   :password => 'changeme',
   :setup_libvirt => true,
   :setup_apt_cacher_ng => !node.platform?('rhel', 'centos'),
+  :database => 'postgresql',
   :plugins => Hash[[
                      project_attributes('foreman_remote_execution'),
                      project_attributes('foreman-tasks'),

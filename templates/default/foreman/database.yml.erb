@@ -1,68 +1,69 @@
+# This file is managed by chef, manual changes might be overriden
+# For final configuration, see bottom of this file
+
 # Postgres
-#
 # for postgres, encoding is required, otherwise weird fixtures error were seen during tests
-development:
+postgresql: &postgresql
   adapter: postgresql
-  database: foreman
   username: foreman
   password: <%= node[:projects][:foreman][:password] %>
   host: localhost
   encoding: UTF8
 
-production:
-  adapter: postgresql
+postgresql_development: &postgresql_development
   database: foreman
+  <<: *postgresql
+
+postgresql_production: &postgresql_production
+  database: foreman
+  <<: *postgresql
+
+postgresql_test: &postgresql_test
+  database: foreman_testing
+  <<: *postgresql
+
+
+# MySQL
+mysql: &mysql
+  adapter: mysql2
   username: foreman
-  password: <%= node[:projects][:foreman][:password] %>
+  password: changeme
   host: localhost
-  encoding: UTF8
+mysql_development: &mysql_development
+  database: foreman
+  <<: *mysql
+mysql_test: &mysql_test
+  database: foreman_testing
+  <<: *mysql
+mysql_production: &mysql_production
+  database: foreman
+  <<: *mysql
+
+
+# SQLite
+sqlite: &sqlite
+  adapter: sqlite3
+  pool: 5
+  timeout: 5000
+sqlite_development: &sqlite_development
+  database: db/development3.sqlite3
+  <<: *sqlite
+sqlite_test: &sqlite_test
+  database: db/test.sqlite3
+  <<: *sqlite
+sqlite_production: &sqlite_production
+  database: db/development3.sqlite3
+  <<: *sqlite
+
+
+development:
+  <<: *<%= node[:projects][:foreman][:database] -%>_development
+
+production:
+  <<: *<%= node[:projects][:foreman][:database] -%>_production
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
-  adapter: postgresql
-  database: foreman_testing
-  username: foreman
-  password: <%= node[:projects][:foreman][:password] %>
-  host: localhost
-  encoding: UTF8
-
-# MySQL
-
-#development:
-#  adapter: mysql2
-#  database: foreman
-#  username: foreman
-#  password: <%= node[:projects][:foreman][:password] %>
-#  host: localhost
-#test:
-#  adapter: mysql2
-#  database: foreman_testing
-#  username: foreman
-#  password: <%= node[:projects][:foreman][:password] %>
-#  host: localhost
-#production:
-#  adapter: mysql2
-#  database: foreman
-#  username: foreman
-#  password: <%= node[:projects][:foreman][:password] %>
-#  host: localhost
-
-
-# SQLite
-#development:
-#  adapter: sqlite3
-#  database: db/development3.sqlite3
-#  pool: 5
-#  timeout: 5000
-#test:
-#  adapter: sqlite3
-#  database: db/test9.sqlite3
-#  pool: 5
-#  timeout: 5000
-#production:
-#  adapter: sqlite3
-#  database: db/development.sqlite3
-#  pool: 5
-#  timeout: 5000
+  <<: *<%= node[:projects][:foreman][:database] -%>_test

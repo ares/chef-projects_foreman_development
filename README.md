@@ -40,6 +40,9 @@ Attributes
   </tr>
 </table>
 
+#### Foreman project attributes:
+:database => 'postgresql' # one of 'postgresql', 'mysql', 'sqlite'
+
 Usage
 -----
 #### projects_foreman_development::default
