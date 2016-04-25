@@ -27,6 +27,8 @@ DHCP_TO=<%= '192.168.122.254' %>
  # setup customer header name used by nginx for client certificate authentication
 <%= hammer -%> settings set --id ssl_client_dn_env --value 'HTTP_SSL_CLIENT_S_DN'
 <%= hammer -%> settings set --id ssl_client_verify_env --value 'HTTP_SSL_CLIENT_VERIFY'
+# default provisioning password
+<%= hammer -%> settings set --id root_pass --value 'changeme'
 
 
 # Setup taxonomies
@@ -120,6 +122,10 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 
 # Puppet settings
 <%= hammer -%> environment create --name production --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
+
+# Hostgroups
+<%= hammer %> hostgroup create --name default --architecture x86_64 --domain example.tst --subnet default --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+### <%= hammer %> hostgroup create --name default/centos --parent default --operatingsystem CentOS --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 
 # TODO improve to include plugins.d/* (foreman_discovery.sh)
 <% if node[:projects][:foreman][:plugins].has_key?(:foreman_discovery) %>
