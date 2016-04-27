@@ -24,40 +24,71 @@ end
 # config files end
 
 ## DB start
-include_recipe 'projects::setup_postgres'
-postgresql_connection_info = { :host => "127.0.0.1",
-                               :port => node['postgresql']['config']['port'],
-                               :username => 'postgres',
-                               :password => node['postgresql']['password']['postgres'] }
+case node[:projects][:foreman][:database]
+  when 'postgresql'
+    include_recipe 'projects::setup_postgres'
+    postgresql_connection_info = { :host => "127.0.0.1",
+                                   :port => node['postgresql']['config']['port'],
+                                   :username => 'postgres',
+                                   :password => node['postgresql']['password']['postgres'] }
 
-postgresql_database_user 'foreman' do
-  connection postgresql_connection_info
-  password node[:projects][:foreman][:password]
-  privileges [:all] # probably not needed
-  createdb true
-  action :create
-end
-
-%w(foreman foreman_testing).each do |db|
-  postgresql_database db do
-    connection postgresql_connection_info
-    action :create
-    owner 'foreman'
-  end
-end
-
-case node[:platform]
-  when 'debian', 'ubuntu'
-    package 'libsqlite3-dev'
-    package 'libmysqlclient-dev'
-  when 'redhat', 'centos', 'fedora'
-    package 'sqlite-devel'
-    if !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6
-      package 'mariadb-devel'
-    else
-      package 'mysql-devel'
+    postgresql_database_user 'foreman' do
+      connection postgresql_connection_info
+      password node[:projects][:foreman][:password]
+      privileges [:all] # probably not needed
+      createdb true
+      action :create
     end
+
+    %w(foreman foreman_testing).each do |db|
+      postgresql_database db do
+        connection postgresql_connection_info
+        action :create
+        owner 'foreman'
+      end
+    end
+  when 'mysql'
+    # case node[:platform]
+    #   when 'debian', 'ubuntu'
+    #     package 'libmysqlclient-dev'
+    #   when 'redhat', 'centos', 'fedora'
+    #     if !node.platform?('rhel', 'centos') || node[:platform_version].to_i > 6
+    #       package 'mariadb-devel'
+    #     else
+    #       package 'mysql-devel'
+    #     end
+    # end
+    include_recipe 'projects::setup_mysql'
+    mysql_connection_info = { :host => "127.0.0.1",
+                              :port => 3306,
+                              :username => 'root',
+                              :password => 'changeme' }
+
+    %w(foreman foreman_testing).each do |db|
+      mysql_database db do
+        connection mysql_connection_info
+        action :create
+      end
+    end
+
+    mysql_database_user 'foreman' do
+      connection mysql_connection_info
+      password   node[:projects][:foreman][:password]
+      host       '%'
+      action     [:create, :grant]
+    end
+  when 'sqlite'
+    # might be missing some packages
+    case node[:platform]
+      when 'debian', 'ubuntu'
+        package 'libsqlite3-dev'
+      when 'redhat', 'centos', 'fedora'
+        package 'sqlite-devel'
+    end
+  else
+    raise "unsupported DB #{node[:projects][:foreman][:database]}"
 end
+
 
 # TODO mysql and make the whole recipe configurable so it can be reused on devel_host
 ## DB end

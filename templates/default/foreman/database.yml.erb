@@ -1,4 +1,4 @@
-# This file is managed by chef, manual changes might be overriden
+# This file is managed by chef, manual changes might be overridden
 # For final configuration, see bottom of this file
 
 # Postgres
@@ -24,11 +24,12 @@ postgresql_test: &postgresql_test
 
 
 # MySQL
+# if we keep localhost as hostname it tries to use socket on default path
 mysql: &mysql
   adapter: mysql2
   username: foreman
-  password: changeme
-  host: localhost
+  password: <%= node[:projects][:foreman][:password] %>
+  host: 127.0.0.1
 mysql_development: &mysql_development
   database: foreman
   <<: *mysql
