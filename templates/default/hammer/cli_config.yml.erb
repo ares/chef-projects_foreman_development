@@ -4,7 +4,7 @@
 <% end -%>
 
 foreman:
-  :host: 'https://<%= node[:fqdn] %>'
+  :host: '<%= node[:projects][:hammer][:foreman_url] -%>'
   :username: 'admin'
   :password: '<%= node[:projects][:foreman][:password] -%>'
 

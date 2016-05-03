@@ -11,6 +11,7 @@ default[:projects][:foreman] = {
 }
 
 default[:projects][:hammer] = {
+  :foreman_url => "http://#{node[:fqdn]}",
   :plugins => Hash[[
                      project_attributes('hammer-cli-foreman', :module_name => 'hammer_cli_foreman', :gem_name => 'hammer_cli_foreman')
                    ]]
