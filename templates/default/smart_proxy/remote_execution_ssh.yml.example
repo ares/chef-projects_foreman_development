@@ -1,5 +1,5 @@
 ---
 :enabled: true
-:ssh_identity_key_file: '~/.ssh/id_rsa_foreman_proxy'
+:ssh_identity_key_file: '/home/<%= node[:user] -%>/.ssh/id_rsa_smart_proxy'
 :local_working_dir: '/var/tmp'
 :remote_working_dir: '/var/tmp'
