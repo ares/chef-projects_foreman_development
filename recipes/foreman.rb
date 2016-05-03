@@ -1,3 +1,5 @@
+include_recipe 'projects_tmunix'
+
 install_path = project_path('foreman')
 
 github_project 'foreman' do
@@ -127,6 +129,9 @@ rake_apipie_cache install_path do
   env({ :FOREMAN_APIPIE_LANGS => 'en' })
 end
 
+# starts Foreman, Smart proxy and Puppet master, use "tmux a" to control
+execute "DONT_ATTACH=1 /home/#{node[:user]}/.bin/tmunix"
+
 if node[:projects][:foreman][:setup_libvirt]
   # Libvirt setup
   service 'libvirtd' do
@@ -236,7 +241,6 @@ end
 link node['nginx']['dir'] + "/sites-enabled/50-foreman.conf" do
   to node['nginx']['dir'] + "/sites-available/foreman.conf"
 end
-
 # end of nginx
 
 if node[:projects][:foreman][:setup_apt_cacher_ng]
@@ -249,11 +253,33 @@ if node[:projects][:foreman][:setup_apt_cacher_ng]
 end
 
 # seed script start
-template "#{install_path}/tmp/seed_script.sh" do
+seed_path = "#{install_path}/tmp/"
+template "#{seed_path}/seed_variables.sh" do
+  source 'foreman/seed_variables.sh.erb'
+  mode '0755'
+  owner node[:user]
+  group node[:user]
+end
+
+template "#{seed_path}/seed_script.sh" do
   source 'foreman/seed_script.sh.erb'
   mode '0755'
   owner node[:user]
   group node[:user]
+  variables :seed_path => "#{seed_path}"
+end
+
+# TODO does not work since rails might not be running at this moment, we must wait until Foreman responds
+execute 'seed_script' do
+  command "su - #{node[:user]} -c 'cd #{project_path('hammer-cli')}; #{project_path('foreman')}/tmp/seed_script.sh > #{project_path('foreman')}/log/seed_script.log'"
+  not_if { ::File.exists?("#{project_path('foreman')}/log/seed_script.log") }
+  action :nothing # we want to trigger seed at the end of the run so plugins can add more parts into plugins.d/
+end
+
+log 'delayed_seed' do
+  message 'A seed script will be run later.'
+  level :info
+  notifies :run, 'execute[seed_script]', :delayed
 end
 # seed script end
 

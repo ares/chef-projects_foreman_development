@@ -22,3 +22,5 @@ end
 cookbook_file project_path('foreman/tmp/pxe_linux_global_default.erb') do
   source 'foreman/pxe_linux_global_default.erb'
 end
+
+foreman_plugin_seed_script 'foreman_discovery_seed_script.sh'

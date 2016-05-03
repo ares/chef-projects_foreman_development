@@ -1,0 +1,4 @@
+source <%= @seed_path -%>/seed_variables.sh
+
+<%= hammer %> template update --id 'PXELinux global default' --file <%= project_path('foreman/tmp/pxe_linux_global_default.erb') %>
+<%= hammer %> template build-pxe-default

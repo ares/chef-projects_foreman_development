@@ -4,7 +4,7 @@
 <% end -%>
 
 foreman:
-  :host: 'https://foreman.example.tst'
+  :host: 'https://<%= node[:fqdn] %>'
   :username: 'admin'
   :password: '<%= node[:projects][:foreman][:password] -%>'
 

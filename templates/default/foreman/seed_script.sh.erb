@@ -1,16 +1,5 @@
-<% hammer = 'bundle exec bin/hammer' -%>
-FOREMAN_DOMAIN=<%= 'foreman.example.tst' %>
-PROXY_NAME=<%= 'foreman.example.tst' %>
-PROXY_URL=<%= 'https://${PROXY_NAME}:8443' %>
-PROVISIONING_DOMAIN=<%= 'example.tst' %>
-ORG_NAME=<%= 'Ares' %>
-LOC_NAME=<%= 'Brno' %>
-NETWORK=<%= '192.168.122.0' %>
-MASK=<%= '255.255.255.0' %>
-GATEWAY=<%= '192.168.122.1' %>
-DNS_PRIMARY=<%= '192.168.122.1' %>
-DHCP_FROM=<%= '192.168.122.20' %>
-DHCP_TO=<%= '192.168.122.254' %>
+# Load shared variables
+source <%= @seed_path -%>/seed_variables.sh
 
 # Fix admin user email
 <%= hammer -%> user update --id admin --mail mhulan@redhat.com
@@ -114,11 +103,11 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
   <% end %>
 <% end %>
 
-# Chef settings
-<%= hammer -%> global-parameter set --name chef_server_url --value 'https://chef.hulan.it'
-<%= hammer -%> global-parameter set --name chef_validation_private_key --value "`cat /etc/chef/pivotal_simpsons.pem`"
-<%= hammer -%> global-parameter set --name chef_validator_name --value pivotal
-<%= hammer -%> global-parameter set --name chef_handler_foreman_url --value "${PROXY_URL}"
+# Chef settings - not ready, might be replaced by REX template
+#<%= hammer -%> global-parameter set --name chef_server_url --value 'https://chef.example.tst'
+#<%= hammer -%> global-parameter set --name chef_validation_private_key --value "`cat /etc/chef/pivotal_simpsons.pem`"
+#<%= hammer -%> global-parameter set --name chef_validator_name --value pivotal
+#<%= hammer -%> global-parameter set --name chef_handler_foreman_url --value "${PROXY_URL}"
 
 # Puppet settings
 <%= hammer -%> environment create --name production --locations "${LOC_NAME}" --organizations "${ORG_NAME}"
@@ -127,8 +116,7 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 <%= hammer %> hostgroup create --name default --architecture x86_64 --domain example.tst --subnet default --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 ### <%= hammer %> hostgroup create --name default/centos --parent default --operatingsystem CentOS --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 
-# TODO improve to include plugins.d/* (foreman_discovery.sh)
-<% if node[:projects][:foreman][:plugins].has_key?(:foreman_discovery) %>
-  <%= hammer %> template update --id 'PXELinux global default' --file <%= project_path('foreman/tmp/pxe_linux_global_default.erb') %>
-  <%= hammer %> template build-pxe-default
-<% end %>
+# Run plugins seed scripts
+for file in <%= @seed_path -%>/plugins.d/*; do
+  source $file;
+done
