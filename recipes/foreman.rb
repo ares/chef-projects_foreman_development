@@ -130,7 +130,11 @@ rake_apipie_cache install_path do
 end
 
 # starts Foreman, Smart proxy and Puppet master, use "tmux a" to control
-execute "DONT_ATTACH=1 /home/#{node[:user]}/.bin/tmunix"
+# TODO this is too early for smart proxy plugins configuration so smart proxy might need to be restarted later
+# maybe we need proper service script for this
+execute "su - #{node[:user]} -c 'DONT_ATTACH=1 /home/#{node[:user]}/.bin/tmunix'" do
+  not_if "su - #{node[:user]} -c 'tmux ls'"
+end
 
 if node[:projects][:foreman][:setup_libvirt]
   # Libvirt setup
@@ -205,17 +209,17 @@ end
 ca_cert('ares_ca.pem')
 include_recipe 'nginx'
 
-certificate_path = "#{node['nginx']['dir']}/foreman.example.tst.pem"
+certificate_path = "#{node['nginx']['dir']}/wild.example.tst.pem"
 cookbook_file certificate_path do
-  source 'foreman.example.tst.pem'
+  source 'wild.example.tst.pem'
   owner node['nginx']['user']
   group node['nginx']['group']
   mode '0644'
 end
 
-private_key_path = "#{node['nginx']['dir']}/foreman.example.tst.key"
+private_key_path = "#{node['nginx']['dir']}/wild.example.tst.key"
 cookbook_file private_key_path do
-  source 'foreman.example.tst.key'
+  source 'wild.example.tst.key'
   owner node['nginx']['user']
   # smart proxy must be able to read it, using group for sharing
   group node[:user]

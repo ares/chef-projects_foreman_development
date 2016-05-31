@@ -88,7 +88,9 @@ template "#{install_path}/config/settings.yml" do
   owner node[:user]
   group node[:user]
   mode '0644'
-  variables :foreman_ca_path => ca_install_path('ares_ca.pem'), :foreman_url => 'https://foreman.example.tst'
+  # TODO should use own foreman_url based on foreman's foreman_fqdn otherwise won't be usable standalone
+  #   if we'd trust puppet CA globally maybe it would work even without
+  variables :foreman_ca_path => ca_install_path('ares_ca.pem'), :foreman_url => "https://#{node[:projects][:foreman][:foreman_fqdn]}"
 end
 
 %w(bmc dhcp_virsh dhcp dns_virsh dns tftp).each do |config|

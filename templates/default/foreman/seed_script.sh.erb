@@ -19,7 +19,6 @@ source <%= @seed_path -%>/seed_variables.sh
 # default provisioning password
 <%= hammer -%> settings set --id root_pass --value 'changeme'
 
-
 # Setup taxonomies
 <%= hammer -%> organization create --name "${ORG_NAME}"
 <%= hammer -%> settings set --id default_location --value "${LOC_NAME}"

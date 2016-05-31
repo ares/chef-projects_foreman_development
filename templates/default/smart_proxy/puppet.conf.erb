@@ -45,8 +45,8 @@
     pluginsync  = true
     masterport  = 8140
     environment = production
-    certname    = foreman.example.tst
-    server      = foreman.example.tst
+    certname    = <%= node[:projects][:foreman][:foreman_fqdn] %>
+    server      = <%= node[:projects][:foreman][:foreman_fqdn] %>
     listen      = true
     splay       = false
     runinterval = 1800
@@ -58,6 +58,6 @@
     external_nodes = /etc/puppet/node.rb
     node_terminus  = exec
     ca             = true
-    node_name      = foreman.example.tst
-    certname       = foreman.example.tst
+    node_name      = <%= node[:projects][:foreman][:foreman_fqdn] %>
+    certname       = <%= node[:projects][:foreman][:foreman_fqdn] %>
     parser =       = current

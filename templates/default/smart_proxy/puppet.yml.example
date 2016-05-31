@@ -45,8 +45,8 @@
 :puppet_url: https://foreman.example.tst:8140
 # SSL certificates used to access the puppet master API
 :puppet_ssl_ca: /var/lib/puppet/ssl/certs/ca.pem
-:puppet_ssl_cert: /var/lib/puppet/ssl/certs/foreman.example.tst.pem
-:puppet_ssl_key: /var/lib/puppet/ssl/private_keys/foreman.example.tst.pem
+:puppet_ssl_cert: /var/lib/puppet/ssl/certs/<%= node[:projects][:foreman][:foreman_fqdn] -%>.pem
+:puppet_ssl_key: /var/lib/puppet/ssl/private_keys/<%= node[:projects][:foreman][:foreman_fqdn] -%>.pem
 
 # Override use of Puppet's API to list environments, by default it will use only if
 # environmentpath is given in puppet.conf, else will look for environments in puppet.conf

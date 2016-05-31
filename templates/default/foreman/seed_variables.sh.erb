@@ -1,5 +1,5 @@
-FOREMAN_DOMAIN=<%= 'foreman.example.tst' %>
-PROXY_NAME=<%= 'foreman.example.tst' %>
+FOREMAN_DOMAIN=<%= node[:projects][:foreman][:foreman_fqdn] %>
+PROXY_NAME=<%= node[:projects][:foreman][:foreman_fqdn] %>
 PROXY_URL=<%= 'https://${PROXY_NAME}:8443' %>
 PROVISIONING_DOMAIN=<%= 'example.tst' %>
 ORG_NAME=<%= 'Ares' %>
