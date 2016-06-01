@@ -201,6 +201,9 @@ if node[:projects][:foreman][:setup_libvirt]
       to "/usr/share/syslinux/#{file}"
     end
   end
+
+  # virt-sysprep utility to build images from domains disk
+  package 'libguestfs-tools'
   # TODO add more subnets (e.g. static, provision) when needed
   # end of libvirt
 end
