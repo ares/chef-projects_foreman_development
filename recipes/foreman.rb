@@ -248,6 +248,16 @@ end
 link node['nginx']['dir'] + "/sites-enabled/50-foreman.conf" do
   to node['nginx']['dir'] + "/sites-available/foreman.conf"
 end
+
+# make default public directory work (http://localhost/)
+pub_dirs = %w(/var/www /var/www/nginx-default)
+pub_dirs.each do |dir|
+  directory dir do
+    owner node[:user]
+    group node[:user]
+    mode '0755'
+  end
+end
 # end of nginx
 
 if node[:projects][:foreman][:setup_apt_cacher_ng]
