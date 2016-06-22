@@ -69,6 +69,10 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
     template_id=`<%= hammer -%> --output yaml template info --name '<%= template_name -%>' | grep "Id:" | awk '{print $2}'`
     <%= hammer -%> os set-default-template --id $os_id --config-template-id $template_id
   <% end %>
+
+  # won't work until someone provisions clean host that serves as image
+  # note that image must be prepared by `sudo virt-sysprep -d rhel-7-2.example.tst`
+  <% hammer -%> compute-resource image create --architecture x86_64 --compute-resource 'Local libvirt' --name clean --operatingsystem '<%= os -%>' --user-data false --username root --password changeme --uuid /var/lib/libvirt/images/centos-<%= os_attrs[:major] -%>-<%= os_attrs[:minor] -%>.${PROVISIONING_DOMAIN}-disk1
 <% end -%>
 
 ### RHEL - same as CentOS
@@ -87,7 +91,7 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 
   # won't work until someone provisions clean host that serves as image
   # note that image must be prepared by `sudo virt-sysprep -d rhel-7-2.example.tst`
-  <% hammer -%> compute-resource image create --architecture x86_64 --compute-resource 'Local libvirt' --name clean --operatingsystem '<%= os -%>' --user-data false --username root --uuid /var/lib/libvirt/images/rhel-<%= os_attrs[:major] -%>-<%= os_attrs[:minor] -%>.${PROVISIONING_DOMAIN}-disk1
+  <% hammer -%> compute-resource image create --architecture x86_64 --compute-resource 'Local libvirt' --name clean --operatingsystem '<%= os -%>' --user-data false --username root --password changeme --uuid /var/lib/libvirt/images/rhel-<%= os_attrs[:major] -%>-<%= os_attrs[:minor] -%>.${PROVISIONING_DOMAIN}-disk1
 <% end -%>
 
 
