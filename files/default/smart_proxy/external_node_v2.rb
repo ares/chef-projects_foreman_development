@@ -7,11 +7,21 @@
 # If --push-facts is given as the only arg, it uploads facts for all hosts and then exits.
 # Useful in scenarios where the ENC isn't used.
 
+require 'rbconfig'
 require 'yaml'
 
-$settings_file = "/etc/puppet/foreman.yaml"
+if RbConfig::CONFIG['host_os'] =~ /freebsd|dragonfly/i
+  $settings_file = '/usr/local/etc/puppet/foreman.yaml'
+else
+  $settings_file = File.exist?('/etc/puppetlabs/puppet/foreman.yaml') ? '/etc/puppetlabs/puppet/foreman.yaml' : '/etc/puppet/foreman.yaml'
+end
 
 SETTINGS = YAML.load_file($settings_file)
+
+# Default external encoding
+if defined?(Encoding)
+  Encoding.default_external = Encoding::UTF_8
+end
 
 def url
   SETTINGS[:url] || raise("Must provide URL in #{$settings_file}")
@@ -101,6 +111,21 @@ def build_body(certname,filename)
   facts        = File.read(filename)
   puppet_facts = YAML::load(facts.gsub(/\!ruby\/object.*$/,''))
   hostname     = puppet_facts['values']['fqdn'] || certname
+  
+  begin
+    require 'facter'
+    puppet_facts['values']['puppetmaster_fqdn'] = Facter.value(:fqdn).to_s
+  rescue LoadError => e
+    puppet_facts['values']['puppetmaster_fqdn'] = `hostname -f`.strip
+  end
+  
+  # filter any non-printable char from the value, if it is a String
+  puppet_facts['values'].each do |key, val|
+    if val.is_a? String
+      puppet_facts['values'][key] = val.scan(/[[:print:]]/).join
+    end
+  end
+  
   {'facts' => puppet_facts['values'], 'name' => hostname, 'certname' => certname}
 end
 
@@ -180,6 +205,7 @@ def upload_facts(certname, req)
   uri = URI.parse("#{url}/api/hosts/facts")
   begin
     res = initialize_http(uri)
+    res.read_timeout = SETTINGS[:timeout]
     res.start { |http| http.request(req) }
     cache("#{certname}-push-facts", "Facts from this host were last pushed to #{uri} at #{Time.now}\n")
   rescue => e
@@ -221,7 +247,9 @@ def watch_and_send_facts(parallel)
 
   inotify = Inotify.new
 
-  inotify.add_watch("#{puppetdir}/yaml/facts", Inotify::CREATE)
+  # actually we need only MOVED_TO events because puppet uses File.rename after tmp file created and flushed.
+  # see lib/puppet/util.rb near line 469
+  inotify.add_watch("#{puppetdir}/yaml/facts", Inotify::CREATE | Inotify::MOVED_TO )
 
   yamls = Dir["#{puppetdir}/yaml/facts/*.yaml"]
 
@@ -242,7 +270,9 @@ def watch_and_send_facts(parallel)
     add_watch = false
 
     if !fn
-      fn = ev.name
+      # inotify returns basename for renamed file as ev.name
+      # but we need full path
+      fn = "#{puppetdir}/yaml/facts/#{ev.name}"
       add_watch = true
     end
 
@@ -314,7 +344,7 @@ if __FILE__ == $0 then
       # query External node
       begin
         result = ""
-        timeout(tsecs) do
+        Timeout.timeout(tsecs) do
           result = enc(certname)
           cache(certname, result)
         end

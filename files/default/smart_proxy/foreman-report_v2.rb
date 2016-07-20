@@ -25,9 +25,9 @@ rescue LoadError
 end
 
 if RbConfig::CONFIG['host_os'] =~ /freebsd|dragonfly/i
-  $settings_file = "/usr/local/etc/puppet/foreman.yaml"
+  $settings_file = '/usr/local/etc/puppet/foreman.yaml'
 else
-  $settings_file = "/etc/puppet/foreman.yaml"
+  $settings_file = File.exist?('/etc/puppetlabs/puppet/foreman.yaml') ? '/etc/puppetlabs/puppet/foreman.yaml' : '/etc/puppet/foreman.yaml'
 end
 
 SETTINGS = YAML.load_file($settings_file)
@@ -42,6 +42,9 @@ Puppet::Reports.register_report(:foreman) do
 
       uri = URI.parse(foreman_url)
       http = Net::HTTP.new(uri.host, uri.port)
+      if SETTINGS[:report_timeout]
+        http.read_timeout = SETTINGS[:report_timeout]
+      end
       http.use_ssl     = uri.scheme == 'https'
       if http.use_ssl?
         if SETTINGS[:ssl_ca] && !SETTINGS[:ssl_ca].empty?
