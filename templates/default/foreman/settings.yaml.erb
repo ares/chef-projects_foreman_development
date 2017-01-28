@@ -22,9 +22,18 @@
 :fqdn: <%= node[:fqdn] %>
 
 # required so that migrations can create values
-:websockets_ssl_key: nil
-:websockets_ssl_cert: nil
-:websockets_encrypt: false
+:websockets_encrypt: true
+:websockets_ssl_key: /etc/nginx/wild.example.tst.key
+:websockets_ssl_cert: /etc/nginx/wild.example.tst.pem
+
+# Use the webpack development server? set to false to disable (for developers)
+# Make sure to run `rake webpack:compile` if disabled.
+:webpack_dev_server: true
+
+# If you run Foreman in development behind some proxy or use HTTPS you need
+# to enable HTTPS for webpack dev server too, otherwise you'd get mixed content
+# errors in your browser
+:webpack_dev_server_https: true
 
 # Log settings for the current environment can be adjusted by adding them
 # here. For example, if you want to increase the log level.

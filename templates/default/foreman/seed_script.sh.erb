@@ -52,12 +52,15 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 # Installation media association
 <%= hammer -%> medium update --name 'CentOS mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 <%= hammer -%> medium update --name 'Debian mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium update --name 'Ubuntu mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium update --name 'Fedora mirror' --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 
 <%= hammer -%> medium create --name 'Debian local proxy' --path "http://${FOREMAN_DOMAIN}:3142/ftp.cz.debian.org/debian/" --os-family Debian --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
+<%= hammer -%> medium create --name 'Ubuntu local proxy' --path "http://${FOREMAN_DOMAIN}:3142/http://archive.ubuntu.com/ubuntu/" --os-family Debian --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 <%= hammer -%> medium create --name 'RedHat BRQ mirror' --path 'http://download.englab.brq.redhat.com/pub/rhel/released/RHEL-$major/$major.$minor/Server/$arch/os/' --os-family Redhat --organizations "${ORG_NAME}" --locations "${LOC_NAME}"
 # Operating systems
 ### CentOS
-<% centos_versions = [ { :major => 6, :minor => 7 }, { :major => 7, :minor => '2.1511' } ] %>
+<% centos_versions = [ { :major => 6, :minor => 7 }, { :major => 7, :minor => '2.1511' }, { :major => 7, :minor => '3.1611' } ] %>
 <% centos_versions.each do |os_attrs| -%>
   <% os_name = 'CentOS' -%>
   <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
@@ -76,7 +79,7 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 <% end -%>
 
 ### RHEL - same as CentOS
-<% rhel_versions = [ { :major => 7, :minor => 2 } ] %>
+<% rhel_versions = [ { :major => 7, :minor => 2 }, { :major => 7, :minor => 3 } ] %>
 <% rhel_versions.each do |os_attrs| -%>
   <% os_name = 'RedHat' -%>
   <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
@@ -102,6 +105,21 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
   <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
 
   <%= hammer -%> os create --architectures 'x86_64' --family 'Debian' --major <%= os_attrs[:major] -%> --minor <%= os_attrs[:minor] -%> --name <%= os_name -%> --partition-tables 'Preseed default' --media 'Debian mirror,Debian local proxy' --release-name '<%= os_attrs[:release] -%>'
+  os_id=`<%= hammer -%> --output yaml os info --title '<%= os -%>' | grep "Id:" | awk '{print $2}'`
+  <% ['Preseed default', 'Preseed default PXELinux', 'Preseed default finish'].each do |template_name| %>
+    <%= hammer -%> template add-operatingsystem --name '<%= template_name -%>' --operatingsystem '<%= os -%>'
+    template_id=`<%= hammer -%> --output yaml template info --name '<%= template_name -%>' | grep "Id:" | awk '{print $2}'`
+    <%= hammer -%> os set-default-template --id $os_id --config-template-id $template_id
+  <% end %>
+<% end %>
+
+### Ubuntu
+<% ubuntu_versions = [ { :major => 14, :minor => 04, :release => 'trusty' }, { :major => 16, :minor => 04, :release => 'xenial' } ] -%>
+<% ubuntu_versions.each do |os_attrs| -%>
+  <% os_name = 'Ubuntu' -%>
+  <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
+
+  <%= hammer -%> os create --architectures 'x86_64' --family 'Debian' --major <%= os_attrs[:major] -%> --minor <%= os_attrs[:minor] -%> --name <%= os_name -%> --partition-tables 'Preseed default' --media 'Ubuntu mirror,Ubuntu local proxy' --release-name '<%= os_attrs[:release] -%>'
   os_id=`<%= hammer -%> --output yaml os info --title '<%= os -%>' | grep "Id:" | awk '{print $2}'`
   <% ['Preseed default', 'Preseed default PXELinux', 'Preseed default finish'].each do |template_name| %>
     <%= hammer -%> template add-operatingsystem --name '<%= template_name -%>' --operatingsystem '<%= os -%>'
