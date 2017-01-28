@@ -99,7 +99,7 @@ proxy_id=`<%= hammer -%> --output yaml proxy info --id "${PROXY_NAME}" | grep "I
 
 
 ### Debian
-<% debian_versions = [ { :major => 7, :minor => 9, :release => 'wheezy' }, { :major => 8, :minor => 3, :release => 'jessie' } ] -%>
+<% debian_versions = [ { :major => 7, :minor => 9, :release => 'wheezy' }, { :major => 8, :minor => 7, :release => 'jessie' } ] -%>
 <% debian_versions.each do |os_attrs| -%>
   <% os_name = 'Debian' -%>
   <% os = "#{os_name} #{os_attrs[:major]}.#{os_attrs[:minor]}" -%>
